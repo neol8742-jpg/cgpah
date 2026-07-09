@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NU Botany & Universal CGPA Extractor</title>
+    
+    <!-- PDF.js Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+    
+    <style>
+        /* CSS Variables for Day/Night Theming */
+        :root {
+            --bg-color: linear-gradient(135deg, #e0f2f1 0%, #c8e6c9 100%);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-panel: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%);
+            --glass-ultra-clear: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.05) 100%);
+            --glass-border: rgba(255, 255, 255, 0.9);
+            
+            --hero-bg: rgba(255, 255, 255, 0.5);
+            --info-card-bg: rgba(255, 255, 255, 0.7);
+            
+            --text-main: #003300;
+            --text-highlight: #004d40;
+            --text-muted: #2e7d32;
+            --botany-green: #1b5e20;
+            --nav-border: rgba(76, 175, 80, 0.8);
+            --row-border: rgba(46, 125, 50, 0.25);
+            --row-hover: rgba(255, 255, 255, 1);
+            --input-bg: rgba(255, 255, 255, 1);
+            --header-bg: rgba(46, 125, 50, 0.25);
+            --glow-name-bg: linear-gradient(90deg, #1b5e20, #00c853, #004d40, #1b5e20);
+            --glow-col: #004d40;
+            --glow-dept: #d84315;
+            --glow-dept-bg: rgba(255,255,255,0.9);
+            --shadow-color: rgba(0, 50, 0, 0.25);
+            --cred-color: #d32f2f;
+        }
+
+        body.dark-mode {
+            --bg-color: linear-gradient(135deg, #0d1522 0%, #1a2533 100%);
+            --glass-bg: rgba(10, 15, 25, 0.85);
+            --glass-panel: linear-gradient(135deg, rgba(15, 22, 35, 0.98) 0%, rgba(8, 12, 18, 0.95) 100%);
+            --glass-ultra-clear: linear-gradient(135deg, rgba(15, 25, 35, 0.35) 0%, rgba(5, 10, 15, 0.1) 100%);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            
+            --hero-bg: rgba(10, 20, 30, 0.4);
+            --info-card-bg: rgba(0, 5, 10, 0.45);
+            
+            --text-main: #ffffff;
+            --text-highlight: #ffffff;
+            --text-muted: #b9f6ca;
+            --botany-green: #69f0ae;
+            --nav-border: rgba(105, 240, 174, 0.6);
+            --row-border: rgba(255, 255, 255, 0.15);
+            --row-hover: rgba(255, 255, 255, 0.2);
+            --input-bg: rgba(0, 0, 0, 0.8);
+            --header-bg: rgba(105, 240, 174, 0.25);
+            --glow-name-bg: linear-gradient(90deg, #69f0ae, #b2ff59, #64ffda, #69f0ae);
+            --glow-col: #a5d6a7;
+            --glow-dept: #ffccbc;
+            --glow-dept-bg: rgba(0,0,0,0.7);
+            --shadow-color: rgba(0, 0, 0, 0.7);
+            --cred-color: #ff5252;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0;
+            padding: 12px; padding-top: 80px; min-height: 100vh; box-sizing: border-box; overflow-x: hidden;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        #bg-art-day {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; transition: opacity 0.6s ease;
+            background: radial-gradient(circle 60px at 85% 15%, rgba(255, 193, 7, 0.25) 0%, transparent 60%), radial-gradient(ellipse 100% 40% at 20% 100%, rgba(129, 199, 132, 0.3) 0%, transparent 100%);
+        }
+        body.dark-mode #bg-art-day { opacity: 0; }
+        
+        #bg-art-night {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; opacity: 0;
+            transition: opacity 0.6s ease; background: linear-gradient(180deg, #080f1e 0%, #1c2b42 100%);
+        }
+        body.dark-mode #bg-art-night { opacity: 1; }
+
+        .stars { 
+            position: absolute; width: 100%; height: 100%; opacity: 0; transition: opacity 1.5s ease; 
+            background-image: 
+                radial-gradient(1px 1px at 15% 15%, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1.5px 1.5px at 75% 25%, rgba(255,255,255,0.9), transparent),
+                radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 85% 70%, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 20% 80%, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1.5px 1.5px at 55% 40%, rgba(255,255,255,0.9), transparent);
+            background-size: 250px 250px;
+            animation: twinkle 5s infinite alternate ease-in-out; 
+        }
+        body.dark-mode .stars { opacity: 1; }
+        @keyframes twinkle { 0% { opacity: 0.6; } 100% { opacity: 1; transform: scale(1.01); } }
+        
+        .celestial-body { position: absolute; top: 12%; right: 15%; width: clamp(150px, 20vw, 220px); aspect-ratio: 1/1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 40%, #94a3b8 90%, #64748b 100%); box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.5), inset -10px -10px 30px rgba(0,0,0,0.2); transform: rotate(-15deg); }
+        .landscape { position: absolute; bottom: 0; left: 0; width: 100%; height: 35vh; }
+        .hill { position: absolute; bottom: -30%; border-radius: 50% 50% 0 0; }
+        .hill-back { width: 140%; height: 100%; left: -20%; background: rgba(14, 30, 48, 0.8); }
+        .hill-front { width: 120%; height: 75%; left: -5%; background: rgba(8, 20, 33, 0.9); backdrop-filter: blur(5px); }
+
+        #theme-toggle, #lang-toggle { position: absolute; top: 20px; z-index: 1000; background: var(--glass-panel); border: 1px solid var(--glass-border); border-radius: 50%; width: 44px; height: 44px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); transition: 0.3s; box-shadow: 0 4px 10px var(--shadow-color); color: var(--text-main); }
+        #theme-toggle { right: 20px; font-size: 22px; }
+        #lang-toggle { right: 75px; }
+        #theme-toggle:hover, #lang-toggle:hover { transform: scale(1.1); background: rgba(76, 175, 80, 0.3); }
+        
+        .content-wrapper { max-width: 900px; margin: 0 auto; position: relative; z-index: 10; }
+        
+        .title-box { background: var(--glass-ultra-clear); backdrop-filter: blur(6px); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2); margin-bottom: 20px; transition: 0.3s; }
+        .site-title { text-align: center; font-size: 26px; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: 2px; background: linear-gradient(90deg, #00c853, var(--botany-green), #009688, #00c853); background-size: 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradShift 4s ease infinite; text-shadow: 0 0 10px rgba(255,255,255,0.15); }
+        
+        .profile-header { text-align: center; margin-bottom: 20px; padding: 15px; background: var(--glass-ultra-clear); backdrop-filter: blur(6px); border-radius: 18px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2); transition: 0.3s; }
+        .glow-name { margin: 0; font-size: 24px; font-weight: 900; background: var(--glow-name-bg); background-size: 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradShift 5s ease infinite reverse; text-shadow: 0 0 8px rgba(0,0,0,0.2); }
+        .glow-college { margin: 8px 0 4px 0; font-size: 15px; font-weight: 800; color: var(--glow-col); }
+        .glow-dept { margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: var(--glow-dept); background: var(--glow-dept-bg); display: inline-block; padding: 4px 12px; border-radius: 20px; }
+        @keyframes gradShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        @keyframes advancedBtnGlow {
+            0% { box-shadow: 0 0 8px rgba(0, 230, 118, 0.4), inset 0 0 8px rgba(0, 230, 118, 0.2); border-color: #00e676; }
+            100% { box-shadow: 0 0 25px rgba(0, 255, 128, 0.9), inset 0 0 15px rgba(0, 255, 128, 0.6); border-color: #b2ff59; transform: scale(1.02); }
+        }
+        .btn-glow-advance {
+            animation: advancedBtnGlow 1.5s infinite alternate !important;
+            background: linear-gradient(135deg, rgba(0, 200, 83, 0.2), rgba(0, 230, 118, 0.3)) !important;
+        }
+
+        @keyframes bounceGlowText {
+            0%, 100% { transform: translateY(0px); text-shadow: 0 2px 5px rgba(0,230,118,0.5); }
+            50% { transform: translateY(-6px); text-shadow: 0 8px 20px rgba(0,255,128,0.9), 0 0 15px rgba(0,255,128,0.7); }
+        }
+        .bounce-glow-text { display: inline-block; animation: bounceGlowText 1.8s infinite ease-in-out; color: var(--botany-green); }
+        body.dark-mode .bounce-glow-text { color: #69f0ae; }
+
+        .menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .sub-menu { display: none; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        
+        .nav-btn { background: var(--glass-bg); border: 2px solid var(--nav-border); padding: 14px 8px; border-radius: 14px; cursor: pointer; text-align: center; backdrop-filter: blur(10px); transition: 0.3s; box-shadow: 0 0 10px var(--shadow-color); display: flex; flex-direction: column; justify-content:center;}
+        .nav-btn .title { font-size: 14px; font-weight: 900; color: var(--botany-green); letter-spacing: 0.3px;}
+        .nav-btn .sub { font-size: 10px; color: var(--text-muted); font-weight: 700; }
+        .nav-btn:hover { background: rgba(76, 175, 80, 0.3); }
+        .nav-btn.active { background: linear-gradient(135deg, #2e7d32, #1b5e20); border-color: #76ff03; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
+        .nav-btn.active .title, .nav-btn.active .sub { color: #fff; }
+        .nav-btn.btn-glow-advance .title, .nav-btn.btn-glow-advance .sub { color: #fff; }
+
+        .calc-section { display: none; animation: popIn 0.35s ease; }
+        .calc-section.active { display: block; }
+        
+        .glass-table { background: var(--glass-panel); backdrop-filter: blur(20px); border-radius: 16px; border: 1px solid var(--glass-border); padding-top:4px; box-shadow: 0 8px 32px var(--shadow-color); margin-bottom: 15px; }
+        .subject-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; font-size: 13px; border-bottom: 1px solid var(--row-border); transition: 0.2s;}
+        .subject-row:last-child { border-bottom: none; }
+        .subject-row:hover { background: var(--row-hover); border-radius: 8px; transform: scale(1.01); }
+        .header-row { background: var(--header-bg) !important; text-transform: uppercase; font-weight: 900;}
+        
+        .c-code { width: 16%; font-weight: 800; color: var(--botany-green); }
+        .c-name { width: 48%; font-weight: 700; white-space: normal; line-height: 1.3; }
+        .c-cred { width: 10%; text-align: center; font-weight: 900; color: var(--cred-color); }
+        .c-grade { width: 26%; text-align: right; }
+        .grade-sel { width: 100%; padding: 6px; border: 1px solid var(--nav-border); background: var(--input-bg); color: var(--text-main); font-weight: bold; border-radius: 6px; cursor: pointer; outline: none;}
+        .grade-sel:focus { border-color: var(--botany-green); box-shadow: 0 0 6px var(--nav-border);}
+        
+        .gpa-badge { padding: 4px 14px; border-radius: 8px; color: white; font-weight: 900; font-size: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.4); transition: background 0.3s, transform 0.25s; box-shadow: 0 4px 12px rgba(0,0,0,0.25); background: linear-gradient(135deg, #757575, #9e9e9e);}
+        .box-info { text-align: center; padding: 18px; }
+        .box-info h3 { margin: 8px 0; display:flex; justify-content: center; align-items: center; gap: 10px; font-size: 15px; flex-wrap: wrap;}
+        
+        .pdf-uploader { position: relative; margin: 15px 0; border: 2px dashed rgba(46,125,50,0.5); padding: 30px; text-align: center; border-radius: 15px; cursor: pointer; background: var(--glass-panel); transition: 0.3s; display: block; overflow: hidden; z-index: 50; }
+        .pdf-uploader:hover, .pdf-uploader.highlight { border-color: #00e676; background: rgba(0, 230, 118, 0.25); box-shadow: 0 0 25px rgba(0, 230, 118, 0.6); transform: scale(1.02); border-style: solid; }
+        .pdf-uploader input[type="file"] { position: absolute; left: 0; right: 0; top: 0; bottom: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 100;}
+        
+        .botany-pdf-btn { padding: 20px; border-color: var(--botany-green); border-width: 3px; background: rgba(27, 94, 32, 0.1); }
+        .botany-pdf-btn:hover { background: rgba(27, 94, 32, 0.2); }
+        
+        .top-hero-details { 
+            background: var(--hero-bg); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25); 
+            border-radius: 15px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+            color: var(--text-highlight);
+        }
+        
+        .grade-summary-tab { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px;}
+        .gs-badge { background: var(--header-bg); padding: 4px 10px; font-weight: bold; border-radius: 20px; font-size: 12px; border: 1px solid var(--botany-green); color: var(--text-highlight);}
+
+        .extracted-info-card { 
+            font-size: 14px; 
+            text-align: left; 
+            background: var(--info-card-bg); 
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: 12px 15px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(76, 175, 80, 0.4); word-break: break-word; }
+        .info-row:last-child { border-bottom: none; }
+        .info-row span { font-weight: 800; color: var(--botany-green); flex-shrink: 0; margin-right: 10px; }
+        body.dark-mode .info-row span { color: #69f0ae; }
+        .info-row strong { text-align: right; color: var(--text-highlight); font-weight: 900; }
+        
+        .man-in { width: 70%; text-align: center; padding: 8px; font-weight: bold; font-size:14px; background: var(--input-bg); border: 2px solid var(--nav-border); border-radius:6px; color:var(--text-main); }
+        .locked-in { background: rgba(0,0,0,0.2); cursor:not-allowed; border-color: transparent; }
+
+        .particle { position: fixed; pointer-events: none; z-index: 9999; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); animation: floatWind forwards ease-in-out; }
+        @keyframes popIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes floatWind {
+            0% { transform: translate(0, -10px) rotate(0) scale(1); opacity: 1; }
+            40% { transform: translate(-25px, 25vh) rotate(90deg) scale(1.2); opacity: 0.9; }
+            100% { transform: translate(15px, 80vh) rotate(225deg) scale(0.8); opacity: 0; }
+        }
+
+        .highlight-c { font-size: 20px; font-weight: 900; color: var(--botany-green); text-shadow: 1px 1px 3px rgba(0,0,0,0.3); padding-left: 5px; }
+        body.dark-mode .highlight-c { color: #69f0ae; }
+
+        .dev-footer { text-align: center; margin-top: 30px; margin-bottom: 20px; font-weight: 800; font-size: 14px; padding: 15px; background: var(--glass-ultra-clear); border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 15px var(--shadow-color); backdrop-filter: blur(6px); transition: 0.3s;}
+
+        @media (max-width: 768px) { 
+            body { padding-top: 70px; }
+            
+            #lang-toggle { right: 65px; top: 15px; width: 38px; height: 38px; font-size: 14px; }
+            #theme-toggle { right: 15px; top: 15px; width: 38px; height: 38px; font-size: 18px; }
+            
+            .menu-grid { grid-template-columns: 1fr 1fr; gap: 8px; } 
+            .sub-menu { grid-template-columns: 1fr 1fr; gap: 8px; } 
+            .nav-btn { padding: 10px 5px; }
+            .nav-btn .title { font-size: 13px; }
+            .nav-btn .sub { font-size: 9px; }
+            
+            .site-title { font-size: 18px; }
+            .glow-name { font-size: 20px; }
+            .glow-college { font-size: 13px; }
+            
+            .c-code { width: 20%; font-size: 11px; }
+            .c-name { width: 42%; font-size: 11px; }
+            .c-cred { width: 12%; font-size: 11px; }
+            .c-grade { width: 26%; font-size: 11px; }
+            .subject-row { padding: 10px 5px; }
+            .grade-sel { padding: 4px; font-size: 11px; }
+            
+            .box-info { padding: 12px; }
+            .box-info h3 { font-size: 13px; line-height: 1.4; }
+            
+            .info-row { flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 0;}
+            .info-row strong { text-align: left; }
+            
+            .pdf-uploader { padding: 20px 10px; }
+            .man-in { width: 90%; font-size: 12px; padding: 6px; }
+        }
+
+        @media (min-width: 1024px) {
+            .celestial-body { width: clamp(250px, 25vw, 400px); box-shadow: 0 0 80px 30px rgba(255,255,255,0.5), 0 0 180px 70px rgba(100,150,255,0.3), inset -10px -10px 30px rgba(0,0,0,0.2);}
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    
+    <div id="bg-art-day"></div>
+    <div id="bg-art-night"><div class="stars"></div><div class="celestial-body"></div><div class="landscape"><div class="hill hill-back"></div><div class="hill hill-front"></div></div></div>
+    
+    <button id="lang-toggle" onclick="toggleLanguage()" title="Change Language">BN</button>
+    <button id="theme-toggle" onclick="toggleTheme()" title="Switch Environment">☀️</button>
+
+    <div class="content-wrapper">
+        <div class="title-box">
+            <h1 class="site-title" id="stitle">Universal Academic GPA Extractor</h1>
+        </div>
+
+        <div class="profile-header">
+            <h1 class="glow-name">Debashis Sarker</h1>
+            <h3 class="glow-college">Govt Azizul Haque College, Bogura</h3>
+            <p class="glow-dept">Department of Botany | Batch 2020-2021</p>
+            <p style="margin: 0; font-size: 12px; font-weight: 700; color: var(--botany-green);">sarkerdebashis2020@gmail.com</p>
+        </div>
+
+        <div class="menu-grid">
+            <div id="btnMainUpload" class="nav-btn btn-glow-advance active" onclick="tabCoreSelect('UPLOAD', this, event)">
+                <span class="title" id="t-up">Universal Extractor</span><span class="sub" id="t-up-s">Upload PDF Result Here</span>
+            </div>
+            <div id="btnMainBotany" class="nav-btn" onclick="tabCoreSelect(1, this, event)">
+                <span class="title" id="t-bot">Botany Profile</span><span class="sub" id="t-bot-s">Native Default Tracking</span>
+            </div>
+            <div id="btnMainUniv" class="nav-btn" onclick="tabCoreSelect('UNIVERSAL', this, event)" style="border-color: #69f0ae;">
+                <span class="title" id="t-oth">Others Dept Result</span><span class="sub" id="t-oth-s">View Universal Data</span>
+            </div>
+            <div id="btnMainComb" class="nav-btn" onclick="tabCoreSelect('COMBINED', this, event)">
+                <span class="title" id="t-com">Combined Result</span><span class="sub" id="t-com-s">Track All Overall Points</span>
+            </div>
+        </div>
+
+        <div id="C-UPLOAD" class="calc-section active">
+            <div class="glass-table box-info">
+                <h3 style="font-weight: 900; color: var(--botany-green); font-size: 18px;">🎓 <span id="m-xt-title">Universal Result Extractor</span></h3>
+                <p style="font-size: 13px; font-weight:700; color:var(--text-main); line-height: 1.5; margin-top:5px;" id="m-xt-desc">Works automatically for NU Economics, History, Zoology, Botany, etc. Seamlessly maps subjects and grades!</p>
+                <label class="pdf-uploader" id="global-uploader-lbl">
+                    <span id="ui-pdf-emoji" style="font-size: 50px; display:block; margin-bottom:10px; text-shadow:0px 4px 6px rgba(0,0,0,0.4);">📂</span>
+                    <span id="ui-pdf-text" class="bounce-glow-text" style="font-size: 16px; font-weight: 900; letter-spacing: 0.5px; padding-top: 5px;">Click or Drag & Drop PDF Result Here</span>
+                    <input type="file" id="u-uploader" accept="application/pdf">
+                </label>
+            </div>
+        </div>
+
+        <div id="botany-wrapper" class="calc-section">
+            <div class="glass-table box-info" style="padding: 10px; margin-bottom: 15px;">
+                <label class="pdf-uploader botany-pdf-btn" id="botany-uploader-lbl" style="margin: 0; padding: 15px;">
+                    <span id="bot-pdf-emoji" style="font-size: 30px; display:block; margin-bottom:5px; text-shadow:0px 4px 6px rgba(0,0,0,0.4);">🌿</span>
+                    <span id="bot-pdf-text" class="bounce-glow-text" style="font-size: 14px; font-weight: 900; padding-top:4px;">Upload Botany Result PDF Here 🌺</span>
+                    <input type="file" id="b-uploader" accept="application/pdf">
+                </label>
+            </div>
+
+            <!-- Dynamically populated Extracted Details Panel exactly replicating standard style! -->
+            <div id="top-b-tracker" class="top-hero-details" style="display:none; text-align: center; margin-bottom: 15px;">
+                <h2 style="font-weight: 900; margin: 10px 0; font-size: 18px; color: var(--text-highlight);">Automated Result CGPA: <span id="bex-cgpa" class="gpa-badge" style="transform: scale(1.15);">0.00</span></h2>
+                <h3 style="margin-top: 5px; font-size: 14px; color: var(--text-highlight);">Total Completed Credits: <span id="bex-creds" class="highlight-c" style="text-shadow: none;">0/0</span></h3>
+                <div class="grade-summary-tab" id="bex-gs-summ"></div>
+                <hr style="border: 0; height: 1px; background: var(--botany-green); margin: 20px 0; opacity: 0.5;">
+                <div class="extracted-info-card">
+                     <div class="info-row"><span>👨‍🎓 Name:</span> <strong id="bex-nam">--</strong></div>
+                     <div class="info-row"><span>🏫 College:</span> <strong id="bex-col">--</strong></div>
+                     <div class="info-row"><span>📄 Session:</span> <strong id="bex-ses">--</strong></div>
+                     <div class="info-row"><span>🎓 Result Scope:</span> <strong id="bex-yr">--</strong></div>
+                </div>
+            </div>
+
+            <div class="sub-menu" id="botany-years" style="display:grid;">
+                <div id="bsub-1" class="nav-btn active" onclick="tabSubSelect(1, this, event)"><span class="title">1st Year</span><span class="sub">🌱 Germination</span></div>
+                <div id="bsub-2" class="nav-btn" onclick="tabSubSelect(2, this, event)"><span class="title">2nd Year</span><span class="sub">🌿 Vegetative</span></div>
+                <div id="bsub-3" class="nav-btn" onclick="tabSubSelect(3, this, event)"><span class="title">3rd Year</span><span class="sub">🍃 Flowering</span></div>
+                <div id="bsub-4" class="nav-btn" onclick="tabSubSelect(4, this, event)"><span class="title">4th Year</span><span class="sub">🌳 Maturity</span></div>
+            </div>
+
+            <div id="C-1" class="botany-year-section active" style="display:block;"></div>
+            <div id="C-2" class="botany-year-section" style="display:none;"></div>
+            <div id="C-3" class="botany-year-section" style="display:none;"></div>
+            <div id="C-4" class="botany-year-section" style="display:none;"></div>
+        </div>
+
+        <div id="C-UNIVERSAL" class="calc-section">
+            <div class="glass-table box-info" style="padding: 10px; margin-bottom: 15px;">
+                <label class="pdf-uploader" id="global-uploader-lbl-2" style="margin: 0; padding: 15px; border-width: 3px; border-color: var(--botany-green); background: rgba(76, 175, 80, 0.1);">
+                    <span id="ui-pdf-emoji-2" style="font-size: 30px; display:block; margin-bottom:5px; text-shadow:0px 4px 6px rgba(0,0,0,0.4);">📄</span>
+                    <span id="ui-pdf-text-2" class="bounce-glow-text" style="font-size: 14px; font-weight: 900; padding-top: 5px;">Drag & Drop or Click to Upload Others Dept PDF Here</span>
+                    <input type="file" id="u-uploader-2" accept="application/pdf">
+                </label>
+            </div>
+            
+            <div id="top-u-tracker" class="top-hero-details" style="display:none; text-align: center;">
+                <h2 style="font-weight: 900; margin: 10px 0; font-size: 18px; color: var(--text-highlight);">Automated Result CGPA: <span id="ui-cgpa" class="gpa-badge" style="transform: scale(1.15);">0.00</span></h2>
+                <h3 style="margin-top: 5px; font-size: 14px; color: var(--text-highlight);">Total Completed Credits: <span id="ui-creds" class="highlight-c" style="text-shadow: none;">0/0</span></h3>
+                <div class="grade-summary-tab" id="ui-gs-summ"></div>
+                <hr style="border: 0; height: 1px; background: var(--botany-green); margin: 20px 0; opacity: 0.5;">
+                <div class="extracted-info-card">
+                     <div class="info-row"><span>👨‍🎓 Name:</span> <strong id="uex-nam">--</strong></div>
+                     <div class="info-row"><span>🏫 College:</span> <strong id="uex-col">--</strong></div>
+                     <div class="info-row"><span>📄 Session:</span> <strong id="uex-ses">--</strong></div>
+                     <div class="info-row"><span>🎓 Dept:</span> <strong id="uex-dpt">--</strong></div>
+                </div>
+            </div>
+
+            <div class="glass-table box-info" id="warn-u" style="margin-top:0px;">
+                <h4 style="font-size:18px; margin:5px 0;">No Universal Data Extracted Yet ⚠️</h4>
+                <p style="font-size: 13px;">Upload your PDF using the above box to extract results instantly!</p>
+            </div>
+            <div id="u-tbld-div"></div>
+        </div>
+
+        <div id="C-COMBINED" class="calc-section">
+            <div class="glass-table">
+                <div class="subject-row header-row">
+                    <div style="width:50%">Year / Evaluation Period</div>
+                    <div style="width:25%; text-align:center;">Total Credits</div>
+                    <div style="width:25%; text-align:center;">Earned GPA</div>
+                </div>
+                <div class="subject-row">
+                    <div style="width:50%; font-weight:700;">🌱 1st Year Result Overview</div>
+                    <div style="width:25%;text-align:center;"><input id="c1" class="man-in locked-in" type="number" value="28" readonly></div>
+                    <div style="width:25%;text-align:center;"><input id="g1" class="man-in" type="number" step="0.01" min="0" max="4" value="0.00" oninput="comG()"></div>
+                </div>
+                <div class="subject-row">
+                    <div style="width:50%; font-weight:700;">🌿 2nd Year Result Overview</div>
+                    <div style="width:25%;text-align:center;"><input id="c2" class="man-in locked-in" type="number" value="28" readonly></div>
+                    <div style="width:25%;text-align:center;"><input id="g2" class="man-in" type="number" step="0.01" min="0" max="4" value="0.00" oninput="comG()"></div>
+                </div>
+                <div class="subject-row">
+                    <div style="width:50%; font-weight:700;">🍃 3rd Year Result Overview</div>
+                    <div style="width:25%;text-align:center;"><input id="c3" class="man-in locked-in" type="number" value="32" readonly></div>
+                    <div style="width:25%;text-align:center;"><input id="g3" class="man-in" type="number" step="0.01" min="0" max="4" value="0.00" oninput="comG()"></div>
+                </div>
+                <div class="subject-row">
+                    <div style="width:50%; font-weight:700;">🌳 4th Year Result Overview</div>
+                    <div style="width:25%;text-align:center;"><input id="c4" class="man-in locked-in" type="number" value="40" readonly></div>
+                    <div style="width:25%;text-align:center;"><input id="g4" class="man-in" type="number" step="0.01" min="0" max="4" value="0.00" oninput="comG()"></div>
+                </div>
+            </div>
+            
+            <div class="glass-table box-info">
+                <h3>Total Evaluated Credits: <span id="ccre" style="color:var(--botany-green); font-size:24px;">128</span></h3>
+                <h3>Overall Combined CGPA = <span id="cgap" class="gpa-badge" style="transform: scale(1.15);">0.00</span></h3>
+            </div>
+        </div>
+
+        <div class="dev-footer">
+            <span id="t-dev">Developed by</span> <span class="glow-name" style="font-size: 15px;">Debashis Sarker</span>
+        </div>
+    </div>
+
+    <script>
+        const eMoLeaves = ['🍃','🌿'];
+        const eMoFlowers = ['🌸','🌺','🌼','🌻','✨'];
+        
+        let dayTheme = false; 
+
+        function toggleTheme() {
+            dayTheme = !dayTheme;
+            document.body.classList.toggle('dark-mode');
+            const bt = document.getElementById('theme-toggle');
+            if(dayTheme){ bt.innerText = '🌙'; } else { bt.innerText = '☀️'; }
+        }
+
+        let isBn = false;
+        const dict = {
+            "stitle": { en: "Universal Academic GPA Extractor", bn: "সার্বজনীন একাডেমিক জিপিএ এক্সট্রাক্টর" },
+            "t-up": { en: "Universal Extractor", bn: "ইউনিভার্সাল এক্সট্রাক্টর" },
+            "t-up-s": { en: "Upload PDF Result Here", bn: "পিডিএফ রেজাল্ট এখানে আপলোড করুন" },
+            "t-bot": { en: "Botany Profile", bn: "উদ্ভিদবিজ্ঞান প্রোফাইল" },
+            "t-bot-s": { en: "Native Default Tracking", bn: "নেটিভ ডিফল্ট ট্র্যাকিং" },
+            "t-oth": { en: "Others Dept Result", bn: "অন্যান্য বিভাগের ফলাফল" },
+            "t-oth-s": { en: "View Universal Data", bn: "ইউনিভার্সাল ডেটা দেখুন" },
+            "t-com": { en: "Combined Result", bn: "সম্মিলিত ফলাফল" },
+            "t-com-s": { en: "Track All Overall Points", bn: "সার্বিক পয়েন্ট ট্র্যাক করুন" },
+            "m-xt-title": { en: "Universal Result Extractor", bn: "সার্বজনীন রেজাল্ট এক্সট্রাক্টর" },
+            "m-xt-desc": { en: "Works automatically for NU Economics, History, Zoology, Botany, etc. Seamlessly maps subjects and grades!", bn: "জাতীয় বিশ্ববিদ্যালয়ের সকল বিভাগের জন্য স্বয়ংক্রিয়ভাবে কাজ করে এবং সাবজেক্ট গ্রেড ম্যাপ করে!" },
+            "t-dev": { en: "Developed by", bn: "ডেভেলপ করেছেন" }
+        };
+
+        function toggleLanguage() {
+            isBn = !isBn;
+            document.getElementById('lang-toggle').innerText = isBn ? "EN" : "BN";
+            
+            for (const key in dict) {
+                const el = document.getElementById(key);
+                if(el) {
+                    el.innerText = isBn ? dict[key].bn : dict[key].en;
+                }
+            }
+        }
+
+        function showParticles(x, y, isFlower = false) {
+            let pts = isFlower ? (Math.floor(Math.random() * 3) + 2) : (Math.floor(Math.random() * 2) + 2);
+            let arr = isFlower ? eMoFlowers : eMoLeaves;
+            for(let i=0; i<pts; i++){
+                setTimeout(()=>{
+                    let pm = document.createElement('div');
+                    pm.className = 'particle'; 
+                    pm.innerText = arr[Math.floor(Math.random()*arr.length)];
+                    let ox = (Math.random()*40)-20;
+                    pm.style.left = (x+ox)+'px'; pm.style.top = y+'px';
+                    pm.style.fontSize = (16+Math.random()*6)+'px';
+                    pm.style.animationDuration = (4+Math.random()*3)+'s';
+                    document.body.appendChild(pm);
+                    setTimeout(()=>pm.remove(), 7000);
+                }, i * (isFlower ? 100 : 300));
+            }
+        }
+        
+        function congratsFlowers() {
+            for(let i=0; i<25; i++) {
+                setTimeout(() => {
+                    let w = window.innerWidth, h = window.innerHeight;
+                    showParticles(Math.random()*w, Math.random()*(h/2), true);
+                }, i*100);
+            }
+        }
+
+        document.body.addEventListener('click', (ev)=> {
+            if(ev.target.tagName==='SELECT' || ev.target.closest('.nav-btn') || ev.target.tagName==='BUTTON' || ev.target.tagName==='INPUT'){
+                showParticles(ev.clientX, ev.clientY, false);
+            }
+        });
+
+        const pGrades = { "A+":4.00, "A":3.75, "A-":3.50, "B+":3.25, "B":3.00, "B-":2.75, "C+":2.50, "C":2.25, "D":2.00, "F":0.00 };
+        function pColor(pt) { if(pt>=3.75)return '#00897b'; if(pt>=3.00)return '#388e3c'; if(pt>=2.5)return '#f57c00'; if(pt>0)return '#d32f2f'; return '#757575'; }
+        
+        // Handling dynamic generation exactly accurately parsing native dropdown mappings logic handling mapped selections properly
+        function rOptions(val, pfMapFlag) {
+            let ov = (val||"").toUpperCase();
+            if(pfMapFlag){ return `<option value="">-</option><option value="PASS" ${ov==='PASS' || ov==='P'?'selected':''}>PASS</option><option value="F" ${ov==='F' || ov==='FAIL' || ov==='ABS'?'selected':''}>FAIL</option>`; }
+            let mk = `<option value="">-</option>`;
+            for(let tg in pGrades) mk+= `<option value="${tg}" ${ov===tg?'selected':''}>${tg}</option>`; return mk;
+        }
+
+        const botMapsData = {
+            1: [ {c:"211501", n:"History Bangladesh", cr:4},{c:"212807", n:"Chemistry-I", cr:4},{c:"212808", n:"Chemistry Pract", cr:2},{c:"213001", n:"Microbiology", cr:3},{c:"213003", n:"Mycology", cr:3},{c:"213005", n:"Phycology", cr:3},{c:"213006", n:"Pract-I", cr:3},{c:"213105", n:"Zoology", cr:4},{c:"213106", n:"Zoology Pract", cr:2} ],
+            2: [ {c:"221109", n:"English (Pass/Fail)", cr:0, pf:true},{c:"222807", n:"Chem-II", cr:4},{c:"222809", n:"Env Chem", cr:2},{c:"223001", n:"Cryptogams", cr:4},{c:"223003", n:"Taxonomy Angiosperms", cr:4},{c:"223005", n:"Plant Anat", cr:4},{c:"223006", n:"Pract-II", cr:4},{c:"223107", n:"Zoo-II", cr:4},{c:"223108", n:"Zoo Pract", cr:2} ],
+            3: [ {c:"233001", n:"Gymno & Paleo", cr:4},{c:"233003", n:"Physiology", cr:4},{c:"233005", n:"Biochemistry", cr:4},{c:"233007", n:"Ecology & Env", cr:4},{c:"233009", n:"Plant Path", cr:4},{c:"233011", n:"Cytology", cr:4},{c:"233013", n:"Genetics", cr:4},{c:"233014", n:"Pract-III", cr:4} ],
+            4: [ {c:"243001", n:"Agronomy", cr:4},{c:"243003", n:"Econ Botany", cr:4},{c:"243005", n:"Limnology", cr:4},{c:"243007", n:"Biodiversity", cr:4},{c:"243009", n:"Plant Breed", cr:4},{c:"243011", n:"Molec Biol", cr:4},{c:"243013", n:"Biostats", cr:4},{c:"243015", n:"Biotech", cr:4},{c:"243016", n:"Pract-IV", cr:4},{c:"243018", n:"Viva-Voce", cr:4} ]
+        };
+
+        function rDataBotsBuild() {
+            for(let x=1; x<=4; x++){
+                let hGen = `<div class="glass-table"><div class="subject-row header-row"><div class="c-code">Code</div><div class="c-name">Subject Title</div><div class="c-cred">Cr.</div><div class="c-grade" style="text-align:center;">Grade</div></div>`;
+                botMapsData[x].forEach((tq,qi)=>{
+                   hGen += `<div class="subject-row"><div class="c-code">${tq.c}</div><div class="c-name" title="${tq.n}">${tq.n}</div><div class="c-cred">${tq.cr}</div><div class="c-grade"><select class="grade-sel" id="bY${x}R${qi}" onchange="tGrCalcB(${x})">${rOptions('', tq.pf)}</select></div></div>`;
+                });
+                let exP = botMapsData[x].reduce((sm, iV) => sm+iV.cr, 0);
+                hGen += `</div><div class="box-info"><h3>Earned Credits: <span id="rYbC${x}" class="highlight-c">0 / ${exP}</span></h3><h3 style="font-weight:900;">Year CGPA = <span class="gpa-badge" id="rYbG${x}" style="margin-left:5px;">0.00</span></h3></div>`;
+                document.getElementById('C-'+x).innerHTML = hGen;
+            }
+        }
+        
+        function comG() {
+            let tcM=0, gpXSum=0;
+            for(let yrIdx=1; yrIdx<=4; yrIdx++){
+               let valCG = parseFloat(document.getElementById(`c${yrIdx}`).value)||0;
+               let scoreG = parseFloat(document.getElementById(`g${yrIdx}`).value)||0;
+               if(scoreG>4)scoreG=4.00;
+               if(valCG>0 && scoreG>0){ tcM+=valCG; gpXSum+=(scoreG*valCG); }
+            }
+            let comU=tcM>0? gpXSum/tcM :0;
+            let extLabelIdent = document.getElementById("cgap"); 
+            extLabelIdent.innerText = comU>0? comU.toFixed(2):"0.00"; 
+            extLabelIdent.style.background = pColor(comU);
+            
+            extLabelIdent.style.transform="scale(1.2)"; setTimeout(()=>extLabelIdent.style.transform="scale(1.15)",250);
+            return comU;
+        }
+
+        // Refactored Top tracker recalculation logic linking Native dynamically extracted hero metrics to active inputs mapping perfectly updates universally and consistently instantly
+        function updateBotanyHeroDynamically() {
+            if(document.getElementById('top-b-tracker').style.display !== 'block') return; 
+            
+            let tBxCred=0, tBxPoints=0, eBxCred=0; 
+            let counts = { 'PASS': 0, 'FAIL': 0 };
+            for(let gx in pGrades) counts[gx] = 0;
+
+            for(let y=1; y<=4; y++) {
+                botMapsData[y].forEach((sb, qID) => {
+                    let uEl = document.getElementById(`bY${y}R${qID}`);
+                    if(uEl && uEl.value) {
+                        let tgVal = uEl.value; 
+                        let bCr = sb.cr;
+                        
+                        if(sb.pf) {
+                            if(tgVal === 'F' || tgVal === 'FAIL' || tgVal === 'ABS') counts['FAIL'] = (counts['FAIL']||0) + 1;
+                            else if(tgVal === 'PASS' || tgVal === 'P') counts['PASS'] = (counts['PASS']||0) + 1;
+                            
+                            if (tgVal === 'PASS' || tgVal === 'P') eBxCred += bCr;
+                        } else {
+                            if(tgVal === 'F') counts['F'] = (counts['F']||0) + 1; // Properly record grade failures mapped correctly here
+                            else counts[tgVal] = (counts[tgVal]||0) + 1;
+
+                            if(pGrades[tgVal] !== undefined) {
+                                tBxCred += bCr;
+                                tBxPoints += pGrades[tgVal]*bCr;
+                                if(tgVal !== 'F') eBxCred += bCr;
+                            }
+                        }
+                    }
+                });
+            }
+            let oFinal = tBxCred > 0 ? (tBxPoints / tBxCred) : 0;
+            if(oFinal > 4.00) oFinal = 4.00;
+
+            let cDisp = document.getElementById('bex-cgpa');
+            cDisp.innerText = oFinal > 0 ? oFinal.toFixed(2) : "0.00";
+            cDisp.style.background = pColor(oFinal);
+            document.getElementById('bex-creds').innerText = `${eBxCred} / ${tBxCred}`;
+
+            let bsListHtml = ``;
+            for(let kv in counts){
+                if(counts[kv]>0){
+                    let pFxStr = counts[kv]>1?"Subjects":"Subject";
+                    bsListHtml += `<div class="gs-badge">${kv}: ${counts[kv]} <span style="font-weight:100; font-size:10px;">${pFxStr}</span></div>`;
+                }
+            }
+            document.getElementById('bex-gs-summ').innerHTML = bsListHtml || `<div style="font-size:11px; color:gray;">Updating Evaluated Records</div>`;
+        }
+
+        function tGrCalcB(pYidStr) {
+            let crValValid=0, pointExtCalcSetup=0, mxCrTotalTrackMap=0;
+            botMapsData[pYidStr].forEach((mkSeq, idxRefMap) => {
+               let selOutput = document.getElementById(`bY${pYidStr}R${idxRefMap}`).value;
+               if(selOutput && !mkSeq.pf){
+                  mxCrTotalTrackMap += mkSeq.cr; 
+                  let checkFoundMathPoint = pGrades[selOutput];
+                  if(checkFoundMathPoint!==undefined){
+                      pointExtCalcSetup += checkFoundMathPoint * mkSeq.cr;
+                      if(selOutput!=='F') crValValid += mkSeq.cr;
+                  }
+               }
+            });
+            let computedEvalExtCalc = mxCrTotalTrackMap>0 ? pointExtCalcSetup/mxCrTotalTrackMap: 0;
+            document.getElementById(`rYbC${pYidStr}`).innerText = crValValid; 
+            
+            let dmOutputIdent = document.getElementById(`rYbG${pYidStr}`); 
+            let fmFinalCalcOutputExt = computedEvalExtCalc>0 ? computedEvalExtCalc.toFixed(2):"0.00"; 
+            
+            dmOutputIdent.innerText = fmFinalCalcOutputExt;
+            dmOutputIdent.style.background = pColor(computedEvalExtCalc); 
+            if(mxCrTotalTrackMap>0) document.getElementById(`g${pYidStr}`).value = fmFinalCalcOutputExt;
+            
+            comG();
+            updateBotanyHeroDynamically(); // Calling injected Dynamic function for seamless local header visual mapping execution perfectly syncs correctly
+        }
+
+        function tabCoreSelect(tgIdxEvlValSelectMapSetupRefIdentIDValMapTrackX, elRefMapGenOutOutMapTargetSetupTrID, extCListTgtTrIdentFValidMapLayoutVal) {
+            document.querySelectorAll('.menu-grid .nav-btn').forEach(trMListCIdSetup=> trMListCIdSetup.classList.remove('active')); 
+            if(elRefMapGenOutOutMapTargetSetupTrID) elRefMapGenOutOutMapTargetSetupTrID.classList.add('active');
+            
+            document.querySelectorAll('.calc-section').forEach(cCIdVMatchTSetIdentTargetCGenEvalValidValidCheck=> cCIdVMatchTSetIdentTargetCGenEvalValidValidCheck.classList.remove('active'));
+
+            if(tgIdxEvlValSelectMapSetupRefIdentIDValMapTrackX === 1) {
+                 document.getElementById('botany-wrapper').classList.add('active');
+                 let tMUIValidIdentFormEvalTargetMValCheckGenIDOutSetEvalMatchMGen = document.querySelector('.sub-menu .active');
+                 if(tMUIValidIdentFormEvalTargetMValCheckGenIDOutSetEvalMatchMGen) {
+                     let getCSeqSetCUIOValExtMSetUIIDLayoutMatchMTrackRefTr = tMUIValidIdentFormEvalTargetMValCheckGenIDOutSetEvalMatchMGen.id.replace('bsub-','');
+                     document.querySelectorAll('.botany-year-section').forEach(eVMTIdIdSelMatchExtIdentIdentLayoutOutValidSeqVListRefListExtMapGenMapMapElListIdO=>eVMTIdIdSelMatchExtIdentIdentLayoutOutValidSeqVListRefListExtMapGenMapMapElListIdO.style.display='none');
+                     document.getElementById(`C-${getCSeqSetCUIOValExtMSetUIIDLayoutMatchMTrackRefTr}`).style.display='block';
+                 } else { tabSubSelect(1, document.getElementById('bsub-1')); }
+            } else {
+                 document.getElementById('botany-wrapper').classList.remove('active');
+                 document.getElementById(`C-${tgIdxEvlValSelectMapSetupRefIdentIDValMapTrackX}`).classList.add('active');
+                 if(tgIdxEvlValSelectMapSetupRefIdentIDValMapTrackX === 'COMBINED') comG();
+            }
+        }
+        
+        function tabSubSelect(tgtSubRefSelIdxIDListEvalTRSeq, eOutCheckObjExtListIdTrackMap, eTrkEvIdSetIdxGenCheckMapValidMapRefUIValTRKID){
+            document.querySelectorAll('.sub-menu .nav-btn').forEach(yEvSetIDValidVGenVUIOListRefIdElEvMatchOutTarget=>yEvSetIDValidVGenVUIOListRefIdElEvMatchOutTarget.classList.remove('active')); 
+            if(eOutCheckObjExtListIdTrackMap) eOutCheckObjExtListIdTrackMap.classList.add('active');
+            
+            document.querySelectorAll('.botany-year-section').forEach(bTRTargetValSeqRefExtSetEvTargetIdxIdentEvalUISeqMatch=>bTRTargetValSeqRefExtSetEvTargetIdxIdentEvalUISeqMatch.style.display='none');
+            document.getElementById(`C-${tgtSubRefSelIdxIDListEvalTRSeq}`).style.display='block'; 
+            
+            document.querySelectorAll('.menu-grid .nav-btn').forEach(mExtMElTListMatchObjUIEvlMatchUIIdentSeqValidSetupTRKElSelRefExtGenVIdGenTargetRefTargetOIdUIOutValElListT=>mExtMElTListMatchObjUIEvlMatchUIIdentSeqValidSetupTRKElSelRefExtGenVIdGenTargetRefTargetOIdUIOutValElListT.classList.remove('active'));
+            document.getElementById('btnMainBotany').classList.add('active');
+            document.getElementById('botany-wrapper').classList.add('active');
+            document.querySelectorAll('.calc-section').forEach(cxIdUIMCheckSeqSetupMatchTElTRIdentTargetIdTGenValMTrUIList=> { if(cxIdUIMCheckSeqSetupMatchTElTRIdentTargetIdTGenValMTrUIList.id!=='botany-wrapper') cxIdUIMCheckSeqSetupMatchTElTRIdentTargetIdTGenValMTrUIList.classList.remove('active'); });
+        }
+
+        // Resolves Extracted track outputs handling F appropriately depending on map rules correctly summing credits for displays matching required layout outputs elegantly instantly
+        function uiUcalcExtTrackLayoutResults() {
+             let gpExOUIValRefOId= 0, totCrUSeqCheck=0, eqEarnGenTotalCheckSeqIdListValidValidMapTObjValSetObjTargetEvalTargetIDCheckOListTListTRkSet=0; 
+             let sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV = { 'PASS': 0, 'FAIL': 0 };
+             for(let xVIdxTargetSetValIdUIIdExtCheckO in pGrades) sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV[xVIdxTargetSetValIdUIIdExtCheckO] = 0;
+
+             document.querySelectorAll('.uVgrade').forEach(xUIMEvalEvIdentOutTSetExtCheckIDObjValidValElMapMatchOutGenOValMatchValOutMatchTargetTRSeq=>{
+                  let tgRefSelectTIdTargetEvalTargetIdExtIdT= xUIMEvalEvIdentOutTSetExtCheckIDObjValidValElMapMatchOutGenOValMatchValOutMatchTargetTRSeq.value; 
+                  let tgExtGenTRSeqValidValCheckC= parseFloat(xUIMEvalEvIdentOutTSetExtCheckIDObjValidValElMapMatchOutGenOValMatchValOutMatchTargetTRSeq.getAttribute('dCrCheck'))||0; 
+
+                  if(tgRefSelectTIdTargetEvalTargetIdExtIdT) {
+                       let mapTallyStringGenValidExtCheckListTRKey = tgRefSelectTIdTargetEvalTargetIdExtIdT;
+                       if (mapTallyStringGenValidExtCheckListTRKey === 'F' && tgExtGenTRSeqValidValCheckC === 0) { mapTallyStringGenValidExtCheckListTRKey = 'FAIL'; }
+                       else if (mapTallyStringGenValidExtCheckListTRKey === 'PASS' || mapTallyStringGenValidExtCheckListTRKey === 'P') { mapTallyStringGenValidExtCheckListTRKey = 'PASS'; }
+                       
+                       sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV[mapTallyStringGenValidExtCheckListTRKey] = (sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV[mapTallyStringGenValidExtCheckListTRKey]||0)+1;
+
+                       if(pGrades[tgRefSelectTIdTargetEvalTargetIdExtIdT]!==undefined) {
+                            totCrUSeqCheck += tgExtGenTRSeqValidValCheckC;
+                            gpExOUIValRefOId += pGrades[tgRefSelectTIdTargetEvalTargetIdExtIdT]*tgExtGenTRSeqValidValCheckC;
+                            if(tgRefSelectTIdTargetEvalTargetIdExtIdT!=='F') eqEarnGenTotalCheckSeqIdListValidValidMapTObjValSetObjTargetEvalTargetIDCheckOListTListTRkSet+=tgExtGenTRSeqValidValCheckC;
+                       }
+                       else if(tgRefSelectTIdTargetEvalTargetIdExtIdT==='PASS' || tgRefSelectTIdTargetEvalTargetIdExtIdT==='P'){
+                            eqEarnGenTotalCheckSeqIdListValidValidMapTObjValSetObjTargetEvalTargetIDCheckOListTListTRkSet+=tgExtGenTRSeqValidValCheckC; 
+                       }
+                  }
+             });
+
+             let refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM= totCrUSeqCheck>0 ? gpExOUIValRefOId/totCrUSeqCheck : 0;
+             if(refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM>4.0) refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM=4.00;
+             let mValidUIfValMOutputObjMatchValEvalOExtCheckMSetUIVTValidSetupMapValRef= refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM>0 ? refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM.toFixed(2):"0.00"; 
+             
+             let oTgUITgtMapObjObjMatchIdIDValMapValValidOutIdObjIDMValSetupUIVal= document.getElementById('ui-cgpa'); 
+             oTgUITgtMapObjObjMatchIdIDValMapValValidOutIdObjIDMValSetupUIVal.innerText = mValidUIfValMOutputObjMatchValEvalOExtCheckMSetUIVTValidSetupMapValRef;
+             oTgUITgtMapObjObjMatchIdIDValMapValValidOutIdObjIDMValSetupUIVal.style.background = pColor(refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM);
+             
+             document.getElementById('ui-creds').innerText = `${eqEarnGenTotalCheckSeqIdListValidValidMapTObjValSetObjTargetEvalTargetIDCheckOListTListTRkSet} / ${totCrUSeqCheck}`;
+
+             let tValidIDGSeqSetupTargetOObjSeqRefMListExtOutOutEvSeqCheckElGenTGenCheckRefTMatchMIdMUIOVal= ``;
+             for(let kVOutIDMapMapVListMatchMElGenElMatchExtTargetRefSetupTargetObjMatchOIdGenSetupOutUIListValGenMapExt in sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV) {
+                 if(sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV[kVOutIDMapMapVListMatchMElGenElMatchExtTargetRefSetupTargetObjMatchOIdGenSetupOutUIListValGenMapExt]>0){
+                    let crWordUIGVIdTRUIObjGenMatchVListValidMatchTSetRefEval= sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV[kVOutIDMapMapVListMatchMElGenElMatchExtTargetRefSetupTargetObjMatchOIdGenSetupOutUIListValGenMapExt]>1? "Subjects":"Subject"; 
+                    tValidIDGSeqSetupTargetOObjSeqRefMListExtOutOutEvSeqCheckElGenTGenCheckRefTMatchMIdMUIOVal += `<div class="gs-badge">${kVOutIDMapMapVListMatchMElGenElMatchExtTargetRefSetupTargetObjMatchOIdGenSetupOutUIListValGenMapExt}: ${sumCountUIOObjIdListCheckEvRefEvalValidRefIDTGenMSetExtMatchTTRSeqListUIRefTargetV[kVOutIDMapMapVListMatchMElGenElMatchExtTargetRefSetupTargetObjMatchOIdGenSetupOutUIListValGenMapExt]} <span style="font-weight:100; font-size:10px;">${crWordUIGVIdTRUIObjGenMatchVListValidMatchTSetRefEval}</span></div>`;
+                 }
+             }
+             document.getElementById('ui-gs-summ').innerHTML = tValidIDGSeqSetupTargetOObjSeqRefMListExtOutOutEvSeqCheckElGenTGenCheckRefTMatchMIdMUIOVal?tValidIDGSeqSetupTargetOObjSeqRefMListExtOutOutEvSeqCheckElGenTGenCheckRefTMatchMIdMUIOVal: `<div style="font-size:11px; color:gray;">Start Extract Validation</div>`;
+             
+             return refCalUExIdentRefEvalResGenTSetRefMapGenOutOutGenValidUIIdVSeqCheckGenMapCheckTRTargetUIEvalSetupMapValidSeqTargetOutValidOutOutM;
+        }
+
+        async function resolveExtractBufferOutIDSetExtMGenMapMap(pTgOBMObjExtMTargetIdMapExtListUIRTRMIdVIdIdMapSetupListTObjTargetSetValTSetupUIOEvIdMapCheckVExtTargetExtSetMapMapExtTSet) {
+             return new Promise((oListTargetRefValidTCheckUIEvObjObjExtGenExtOutTMatchEvalValVCheckUIOObjMapSetupValidListUIIDGenRefValidOutIdMObjMMapVTargetSetValSetSetM, uOutIdentMTRkGenIDMapExtMapExtCheckIdTRGenMapIdMapObjValObjVObjEvalSetCheckMapUISeqMValidObjTRUIOListTargetEval) => {
+                 let readerTTargetValidSetupEvIdSetupRefGenMapCheckGenIdUIMapCheckMatchValMValRefUIUIObjGenMapUIOutIDMTRkListGenExtGen = new FileReader();
+                 readerTTargetValidSetupEvIdSetupRefGenMapCheckGenIdUIMapCheckMatchValMValRefUIUIObjGenMapUIOutIDMTRkListGenExtGen.onload = async function(evtMatchTrOOutEvalExtIdListSeqListGenEvObjUIValidTRTValidExtMapTRTGenSetMapExtSetTRMatchMGenRefSetTCheckOut) {
+                     try {
+                         let dtRIdentTMapTargetExtSetUIMatchTargetObjSetupValidMSetupVRefIdCheckOValidMapExtIDOutTRValidSeqSetSetupObjObj = new Uint8Array(evtMatchTrOOutEvalExtIdListSeqListGenEvObjUIValidTRTValidExtMapTRTGenSetMapExtSetTRMatchMGenRefSetTCheckOut.target.result);
+                         let pfTRKIdEvVGenMapListOutMGenRefCheckMapTListSetupTargetTCheckIdVTargetUIExtValidOutMapCheckTargetIdRefValidObjIdListUIIdOMap = await pdfjsLib.getDocument(dtRIdentTMapTargetExtSetUIMatchTargetObjSetupValidMSetupVRefIdCheckOValidMapExtIDOutTRValidSeqSetSetupObjObj).promise;
+                         
+                         let rsSetListIDValTRUIValUIObjObjTRkExtValidListMListTUIOIdSetTRkOUIEvUIValMatchSetGenTRCheckVListIdTRSeqCheckSet = [];
+                         for(let iPageRefIdxTCheckMObjUIValExtObjValMatchUIExtListExtMapIdValCheckListOut=1; iPageRefIdxTCheckMObjUIValExtObjValMatchUIExtListExtMapIdValCheckListOut<=pfTRKIdEvVGenMapListOutMGenRefCheckMapTListSetupTargetTCheckIdVTargetUIExtValidOutMapCheckTargetIdRefValidObjIdListUIIdOMap.numPages; iPageRefIdxTCheckMObjUIValExtObjValMatchUIExtListExtMapIdValCheckListOut++) {
+                             let vPTTargetTListVValExtGenMIdEvListObjTargetSetVOutMTargetUIUIIdSeqGenValidMapIdMatchOutMatchTObjTRUIObjMObjTSetMatchTR = await pfTRKIdEvVGenMapListOutMGenRefCheckMapTListSetupTargetTCheckIdVTargetUIExtValidOutMapCheckTargetIdRefValidObjIdListUIIdOMap.getPage(iPageRefIdxTCheckMObjUIValExtObjValMatchUIExtListExtMapIdValCheckListOut); 
+                             let tDataMListSetTMatchVTRUIListValidSetMatchRefMapTargetListTargetIdMapTRRefOutTargetSetOutObjExtValVSetupObjCheckOExtEvExtCheckOListSeqMSeqT = await vPTTargetTListVValExtGenMIdEvListObjTargetSetVOutMTargetUIUIIdSeqGenValidMapIdMatchOutMatchTObjTRUIObjMObjTSetMatchTR.getTextContent(); 
+                             tDataMListSetTMatchVTRUIListValidSetMatchRefMapTargetListTargetIdMapTRRefOutTargetSetOutObjExtValVSetupObjCheckOExtEvExtCheckOListSeqMSeqT.items.forEach(itmEvalSetupSetCheckUIMatchTUIIdMapVCheckExtCheckTOutMMapValidGenUIIdOutId=> {if(itmEvalSetupSetCheckUIMatchTUIIdMapVCheckExtCheckTOutMMapValidGenUIIdOutId.str.trim()) rsSetListIDValTRUIValUIObjObjTRkExtValidListMListTUIOIdSetTRkOUIEvUIValMatchSetGenTRCheckVListIdTRSeqCheckSet.push(itmEvalSetupSetCheckUIMatchTUIIdMapVCheckExtCheckTOutMMapValidGenUIIdOutId.str.trim())});
+                         }
+                         oListTargetRefValidTCheckUIEvObjObjExtGenExtOutTMatchEvalValVCheckUIOObjMapSetupValidListUIIDGenRefValidOutIdMObjMMapVTargetSetValSetSetM(rsSetListIDValTRUIValUIObjObjTRkExtValidListMListTUIOIdSetTRkOUIEvUIValMatchSetGenTRCheckVListIdTRSeqCheckSet);
+                     } catch(errSetOListValidTCheckOutUIRkGenMSetCheckEvalMatchSetObjMapOValGenMatchMSetV) { uOutIdentMTRkGenIDMapExtMapExtCheckIdTRGenMapIdMapObjValObjVObjEvalSetCheckMapUISeqMValidObjTRUIOListTargetEval(errSetOListValidTCheckOutUIRkGenMSetCheckEvalMatchSetObjMapOValGenMatchMSetV); }
+                 };
+                 readerTTargetValidSetupEvIdSetupRefGenMapCheckGenIdUIMapCheckMatchValMValRefUIUIObjGenMapUIOutIDMTRkListGenExtGen.readAsArrayBuffer(pTgOBMObjExtMTargetIdMapExtListUIRTRMIdVIdIdMapSetupListTObjTargetSetValTSetupUIOEvIdMapCheckVExtTargetExtSetMapMapExtTSet);
+             });
+        }
+
+        async function parseUnifiedProcessorUIHandleMainMatchCheckExtIdTValidTMapCheck(fObjUIMSetupTRTargetTRGenMapVIdMatchObjTMatchMatchObjSetOutTRMatchMatchMapOValTargetTargetObjValidMObjValidUIValIdRef, pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut, eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen, inpUIIdSeqValMSetupMapValMapListGenOutExtTRGenGen) {
+             pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="Extracting Secure Results Data..."; 
+             eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="⏳";
+
+             try {
+                 let arrPdfEvalMapSetOIdListVTargetTRSetValObjCheckTRValMatchSetMatchSetupValTRIdMapUIRefCheckValidExtMapRefIdMSetupTRUIExtListUIObjIdMatchVOutSetupOutListExtValVSet = await resolveExtractBufferOutIDSetExtMGenMapMap(fObjUIMSetupTRTargetTRGenMapVIdMatchObjTMatchMatchObjSetOutTRMatchMatchMapOValTargetTargetObjValidMObjValidUIValIdRef);
+                 let mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI = arrPdfEvalMapSetOIdListVTargetTRSetValObjCheckTRValMatchSetMatchSetupValTRIdMapUIRefCheckValidExtMapRefIdMSetupTRUIExtListUIObjIdMatchVOutSetupOutListExtValVSet.join(" ");
+
+                 let rxNObjUIRefTRObjValidSetupMapValidUIRefTRMOutMatchValTRIdTargetUIRefMapSetup = mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI.match(/Name of Student\s+(.*?)\s+(?:Father|Mother|College|Institute)/i);
+                 let rxCMOutMapValSetupIdGenMatchMOutExtTValOListVTargetVUI = mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI.match(/College\s+(.*?)\s+Session/i);
+                 let rxSRTRObjUIMSetupGenTRkValidMatchListMapUIIdMCheck = mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI.match(/Session\s+([\d\-]+)/i); 
+                 let rxDUIMatchMapValListMatchTListMapVTargetValGenValidCheckOExtUIUI = mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI.match(/Subject\s+(?:\d{2,4}\s*[-–]\s*)?([A-Za-z\s&]+?)(?=\s+(?:Result|Status|Promoted|Passed|Earned|Type|Student|1st|2nd|3rd|4th|Grade))/i); 
+                 let rxYRTRValidSetupUIIdMapGenValSetMapGenMapGenUI = mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI.match(/(1st|2nd|3rd|4th|First|Second|Third|Fourth)\s+Year/i); 
+
+                 let tMIdValExtGenValObjObjRefObjUIRefIdUIMRefVValRefOutGenMapList = rxNObjUIRefTRObjValidSetupMapValidUIRefTRMOutMatchValTRIdTargetUIRefMapSetup? rxNObjUIRefTRObjValidSetupMapValidUIRefTRMOutMatchValTRIdTargetUIRefMapSetup[1].trim() : "Unknown Student";
+                 let tCVExtTRIdExtCheckObjUIUIMObjVListUIValSetupOutObjCheckVal = rxCMOutMapValSetupIdGenMatchMOutExtTValOListVTargetVUI? rxCMOutMapValSetupIdGenMatchMOutExtTValOListVTargetVUI[1].trim() : "Unknown College";
+                 let tSVOutGenRefOOutCheckExtSetupCheckVTRMatchOListTSetTRRefObjUIObjOutOObjTRMOutVGenVal = rxSRTRObjUIMSetupGenTRkValidMatchListMapUIIdMCheck? rxSRTRObjUIMSetupGenTRkValidMatchListMapUIIdMCheck[1].trim() : "----";
+                 let tDTargetExtIdMatchValExtCheckValidTRListCheckUIIdSetGenIdMapSetupValUI = rxDUIMatchMapValListMatchTListMapVTargetValGenValidCheckOExtUIUI? rxDUIMatchMapValListMatchTListMapVTargetValGenValidCheckOExtUIUI[1].trim() : "Unknown Department";
+                 let tYIdTSetTRkOutMatchIdIdRefTargetValListUIVSetupOListSetTMatchMapMatch = rxYRTRValidSetupUIIdMapGenValSetMapGenMapGenUI? rxYRTRValidSetupUIIdMapGenValSetMapGenMapGenUI[1].trim() : ""; 
+
+                 let blTargetIsBMapVMapSetRefGenRefMatchGenOutTMatchCheckVTargetUIOutTargetMListValOutRefValidMatchUI = false;
+                 let uTargetStringMatchTListGenTargetSetUIMatchTargetUI = tDTargetExtIdMatchValExtCheckValidTRListCheckUIIdSetGenIdMapSetupValUI.toUpperCase() + " " + mstrResultIdTargetTRkUIMRefOObjUIObjUIObjGenMatchVObjValidUIIdRefObjTargetTOutMCheckUI.toUpperCase();
+                 if (uTargetStringMatchTListGenTargetSetUIMatchTargetUI.includes("BOTANY")) blTargetIsBMapVMapSetRefGenRefMatchGenOutTMatchCheckVTargetUIOutTargetMListValOutRefValidMatchUI = true;
+
+                 let tUIMapExtractGenTRTMapOObjSetObjTValRefOutTRTUIOutGenTargetIdOValListMatchCheckUISeqMatchExtOIdListExtSetupMapTGenTList = {};
+                 let gListTRMapRefValidIdTRkObjListRefGenOutOutOListVExtMatchIdCheckTTargetUIOut = [];
+                 let cRGenMapValidValidMIdMapMatchGenMatchGenExtOutObjMatchExt = false;
+
+                 for(let zIdxVIdSetObjMapMapTValMSetupSetObjTRkMatchCheckIdTValidSetRefM=0; zIdxVIdSetObjMapMapTValMSetupSetObjTRkMatchCheckIdTValidSetRefM<arrPdfEvalMapSetOIdListVTargetTRSetValObjCheckTRValMatchSetMatchSetupValTRIdMapUIRefCheckValidExtMapRefIdMSetupTRUIExtListUIObjIdMatchVOutSetupOutListExtValVSet.length; zIdxVIdSetObjMapMapTValMSetupSetObjTRkMatchCheckIdTValidSetRefM++){
+                       let tIDRefObjValMapVValValCheckTRTargetObjGenGenVTargetSetupValidUIObjOIdTargetSetUIRTRTRRefObjSetupTRVExt = arrPdfEvalMapSetOIdListVTargetTRSetValObjCheckTRValMatchSetMatchSetupValTRIdMapUIRefCheckValidExtMapRefIdMSetupTRUIExtListUIObjIdMatchVOutSetupOutListExtValVSet[zIdxVIdSetObjMapMapTValMSetupSetObjTRkMatchCheckIdTValidSetRefM];
+                       if(/^\d{6}$/.test(tIDRefObjValMapVValValCheckTRTargetObjGenGenVTargetSetupValidUIObjOIdTargetSetUIRTRTRRefObjSetupTRVExt)){ 
+                            let tmpTitleGenMapMatchUIRefTUIUIMValidListSetupOObjExtGenTTRTIdUIIdMapTargetMListTGen = "", tmpGenCredSetupMatchIdExtOutOIdSetIdTRGenValidValMapObjExtGenTUIExt = 0, tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI = "";
+                            for(let xMatchExtMatchVTRIdValValidIdValTTargetTargetMGenIdMapSetupValOutGenValidSetTargetSetIdIdTargetSetOutExtMTargetUIObjCheckUIValSetMapMVal=1; xMatchExtMatchVTRIdValValidIdValTTargetTargetMGenIdMapSetupValOutGenValidSetTargetSetIdIdTargetSetOutExtMTargetUIObjCheckUIValSetMapMVal<=15 && (zIdxVIdSetObjMapMapTValMSetupSetObjTRkMatchCheckIdTValidSetRefM+xMatchExtMatchVTRIdValValidIdValTTargetTargetMGenIdMapSetupValOutGenValidSetTargetSetIdIdTargetSetOutExtMTargetUIObjCheckUIValSetMapMVal)<arrPdfEvalMapSetOIdListVTargetTRSetValObjCheckTRValMatchSetMatchSetupValTRIdMapUIRefCheckValidExtMapRefIdMSetupTRUIExtListUIObjIdMatchVOutSetupOutListExtValVSet.length; xMatchExtMatchVTRIdValValidIdValTTargetTargetMGenIdMapSetupValOutGenValidSetTargetSetIdIdTargetSetOutExtMTargetUIObjCheckUIValSetMapMVal++){
+                                  let jGenIdMValidMTRMapValidTargetSetMapValidCheckUIOValValUIObjListUIExtRefMapListTRSet = arrPdfEvalMapSetOIdListVTargetTRSetValObjCheckTRValMatchSetMatchSetupValTRIdMapUIRefCheckValidExtMapRefIdMSetupTRUIExtListUIObjIdMatchVOutSetupOutListExtValVSet[zIdxVIdSetObjMapMapTValMSetupSetObjTRkMatchCheckIdTValidSetRefM+xMatchExtMatchVTRIdValValidIdValTTargetTargetMGenIdMapSetupValOutGenValidSetTargetSetIdIdTargetSetOutExtMTargetUIObjCheckUIValSetMapMVal]; 
+                                  if(/^\d{6}$/.test(jGenIdMValidMTRMapValidTargetSetMapValidCheckUIOValValUIObjListUIExtRefMapListTRSet)) break; 
+                                  let zTrUIExtValidValSetupSetSetupTRObjMValidSetupTargetObjListValidUIRTRkObjValidRefValListGenIdSetExtOutSetObjMatchValCheckMTargetSetCheckMListSetTargetMatchValMMapVExtIdT = jGenIdMValidMTRMapValidTargetSetMapValidCheckUIOValValUIObjListUIExtRefMapListTRSet.toUpperCase().replace(/[^A-Z\+\-]/g, '');
+                                  if(['A+','A','A-','B+','B','B-','C+','C','D','F','PASS','P','FAIL','ABS'].includes(zTrUIExtValidValSetupSetSetupTRObjMValidSetupTargetObjListValidUIRTRkObjValidRefValListGenIdSetExtOutSetObjMatchValCheckMTargetSetCheckMListSetTargetMatchValMMapVExtIdT)){
+                                      tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI = zTrUIExtValidValSetupSetSetupTRObjMValidSetupTargetObjListValidUIRTRkObjValidRefValListGenIdSetExtOutSetObjMatchValCheckMTargetSetCheckMListSetTargetMatchValMMapVExtIdT; 
+                                      if(zTrUIExtValidValSetupSetSetupTRObjMValidSetupTargetObjListValidUIRTRkObjValidRefValListGenIdSetExtOutSetObjMatchValCheckMTargetSetCheckMListSetTargetMatchValMMapVExtIdT==='P') tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI='PASS'; 
+                                      if(zTrUIExtValidValSetupSetSetupTRObjMValidSetupTargetObjListValidUIRTRkObjValidRefValListGenIdSetExtOutSetObjMatchValCheckMTargetSetCheckMListSetTargetMatchValMMapVExtIdT==='ABS' || zTrUIExtValidValSetupSetSetupTRObjMValidSetupTargetObjListValidUIRTRkObjValidRefValListGenIdSetExtOutSetObjMatchValCheckMTargetSetCheckMListSetTargetMatchValMMapVExtIdT==='FAIL') tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI='F'; 
+                                      break; 
+                                  } else if(/^\d+(?:\.\d+)?$/.test(jGenIdMValidMTRMapValidTargetSetMapValidCheckUIOValValUIObjListUIExtRefMapListTRSet)) {
+                                      tmpGenCredSetupMatchIdExtOutOIdSetIdTRGenValidValMapObjExtGenTUIExt= parseFloat(jGenIdMValidMTRMapValidTargetSetMapValidCheckUIOValValUIObjListUIExtRefMapListTRSet); 
+                                  } else { tmpTitleGenMapMatchUIRefTUIUIMValidListSetupOObjExtGenTTRTIdUIIdMapTargetMListTGen+= (tmpTitleGenMapMatchUIRefTUIUIMValidListSetupOObjExtGenTTRTIdUIIdMapTargetMListTGen?" ":"")+jGenIdMValidMTRMapValidTargetSetMapValidCheckUIOValValUIObjListUIExtRefMapListTRSet; }
+                            }
+                            if(tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI){ 
+                                 tUIMapExtractGenTRTMapOObjSetObjTValRefOutTRTUIOutGenTargetIdOValListMatchCheckUISeqMatchExtOIdListExtSetupMapTGenTList[tIDRefObjValMapVValValCheckTRTargetObjGenGenVTargetSetupValidUIObjOIdTargetSetUIRTRTRRefObjSetupTRVExt] = tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI;
+                                 gListTRMapRefValidIdTRkObjListRefGenOutOutOListVExtMatchIdCheckTTargetUIOut.push({idCMapIDObjUIMapExtMatchListValidSetupGenMatchIdVSetExtValidIdSetVObj: tIDRefObjValMapVValValCheckTRTargetObjGenGenVTargetSetupValidUIObjOIdTargetSetUIRTRTRRefObjSetupTRVExt, nmTrOObjValOutCheckMapTRUIListTListSetUIExtIdGenMapOutObj: tmpTitleGenMapMatchUIRefTUIUIMValidListSetupOObjExtGenTTRTIdUIIdMapTargetMListTGen, crXOutMatchUIObjValSetupIdOOutVTRSetupOIdObjMatchTMapOObjSetO: tmpGenCredSetupMatchIdExtOutOIdSetIdTRGenValidValMapObjExtGenTUIExt, gxExtValidMatchUIRefIdMatchUIGenMapVUIValidIdTValVListValidObjUIIdObjCheckMOutGenTRValidObjGenIdOObjO: tmpGValidOListTargetCheckIdTRUIValSetupMUIIdSetSetObjUIOObjExtIdListUI});
+                                 cRGenMapValidValidMIdMapMatchGenMatchGenExtOutObjMatchExt=true;
+                            }
+                       }
+                 }
+                 if(!cRGenMapValidValidMIdMapMatchGenMatchGenExtOutObjMatchExt) throw new Error("No codes mapping valid logic.");
+
+                 if (blTargetIsBMapVMapSetRefGenRefMatchGenOutTMatchCheckVTargetUIOutTargetMListValOutRefValidMatchUI) {
+                      document.getElementById("bex-nam").innerText = tMIdValExtGenValObjObjRefObjUIRefIdUIMRefVValRefOutGenMapList;
+                      document.getElementById("bex-col").innerText = tCVExtTRIdExtCheckObjUIUIMObjVListUIValSetupOutObjCheckVal;
+                      document.getElementById("bex-ses").innerText = `${tSVOutGenRefOOutCheckExtSetupCheckVTRMatchOListTSetTRRefObjUIObjOutOObjTRMOutVGenVal} (Botany Extracted)`;
+                      document.getElementById("bex-yr").innerText = `${tYIdTSetTRkOutMatchIdIdRefTargetValListUIVSetupOListSetTMatchMapMatch ? tYIdTSetTRkOutMatchIdIdRefTargetValListUIVSetupOListSetTMatchMapMatch+" Year": "Year Auto-Resolved"} ✨`;
+                      document.getElementById('top-b-tracker').style.display='block';
+
+                      let autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal = null;
+                      let dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI = tYIdTSetTRkOutMatchIdIdRefTargetValListUIVSetupOListSetTMatchMapMatch.toLowerCase();
+                      if(dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('1st')||dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('first')) autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal=1;
+                      if(dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('2nd')||dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('second')) autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal=2;
+                      if(dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('3rd')||dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('third')) autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal=3;
+                      if(dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('4th')||dxExtEvalYRYSetupTargetCheckValidUIRMapUIObjGenOIdOObjUI.includes('fourth')) autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal=4;
+
+                      for(let byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut=1; byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut<=4; byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut++){
+                           botMapsData[byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut].forEach((botSUIIDCheckIdTRUIIdExtListUIObjTRSeqGenOValidListObjTTargetExtGenTargetVListListValTRValidIdRefObjMListOutExtSetUIObjValidMCheckOut, byidxTargetValVTargetListValSetupSetSetCheckIdListValidCheckUIGenMapVTRMListRefExtTRRefSetUIOOutMatchMapExtGenOOutUIListTRListObjTObjTargetObjValListMapValExtUIList) => {
+                               if(tUIMapExtractGenTRTMapOObjSetObjTValRefOutTRTUIOutGenTargetIdOValListMatchCheckUISeqMatchExtOIdListExtSetupMapTGenTList[botSUIIDCheckIdTRUIIdExtListUIObjTRSeqGenOValidListObjTTargetExtGenTargetVListListValTRValidIdRefObjMListOutExtSetUIObjValidMCheckOut.c]) {
+                                    let gDropVGenTIdOutExtMatchSetupMUIIdObjMValCheckListCheckValidOutValObjIdGenMapValGenOExtIdRefSetListMapSetMOutOutValMatchUIId = document.getElementById(`bY${byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut}R${byidxTargetValVTargetListValSetupSetSetCheckIdListValidCheckUIGenMapVTRMListRefExtTRRefSetUIOOutMatchMapExtGenOOutUIListTRListObjTObjTargetObjValListMapValExtUIList}`);
+                                    if(gDropVGenTIdOutExtMatchSetupMUIIdObjMValCheckListCheckValidOutValObjIdGenMapValGenOExtIdRefSetListMapSetMOutOutValMatchUIId) gDropVGenTIdOutExtMatchSetupMUIIdObjMValCheckListCheckValidOutValObjIdGenMapValGenOExtIdRefSetListMapSetMOutOutValMatchUIId.value = tUIMapExtractGenTRTMapOObjSetObjTValRefOutTRTUIOutGenTargetIdOValListMatchCheckUISeqMatchExtOIdListExtSetupMapTGenTList[botSUIIDCheckIdTRUIIdExtListUIObjTRSeqGenOValidListObjTTargetExtGenTargetVListListValTRValidIdRefObjMListOutExtSetUIObjValidMCheckOut.c];
+                                    if(!autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal) autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal = byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut;
+                               }
+                           });
+                           tGrCalcB(byVRefUIObjIdValidSetOExtMatchOIdRefOObjUIVCheckVCheckObjSetIdGenCheckExtListTargetOutGenExtVMatchMapValValCheckMapExtCheckOutUIObjMatchCheckMatchOut);
+                      }
+                      
+                      tabCoreSelect(1, document.getElementById('btnMainBotany'));
+                      if(autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal){
+                           tabSubSelect(autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal, document.getElementById('bsub-'+autoBUIEvalYRSetUIRValidTTargetTMapSetUIObjRefOutOOutTargetMapMatchGenSetupTObjValObjIdListIdIdMapExtOutTRGenSetListVal));
+                      }
+                      pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="Successfully Checked & Mapped to Native Botany Layout 🌺";
+                      eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="🌿";
+
+                      let fmUISeqObjVMatchIdObjCheckSetOutUIMTRTRMatchVMatchIdVValIdValUIOIdOValObjMIdSetTSetupVGenValValidExtObjValidRefObjO=comG();
+                      if(fmUISeqObjVMatchIdObjCheckSetOutUIMTRTRMatchVMatchIdVValIdValUIOIdOValObjMIdSetTSetupVGenValValidExtObjValidRefObjO >= 3.0) congratsFlowers();
+
+                 } else {
+                     document.getElementById("uex-nam").innerText = tMIdValExtGenValObjObjRefObjUIRefIdUIMRefVValRefOutGenMapList; 
+                     document.getElementById("uex-col").innerText = tCVExtTRIdExtCheckObjUIUIMObjVListUIValSetupOutObjCheckVal;
+                     document.getElementById("uex-ses").innerText = `${tSVOutGenRefOOutCheckExtSetupCheckVTRMatchOListTSetTRRefObjUIObjOutOObjTRMOutVGenVal} (Universal Mapped)`; 
+                     document.getElementById("uex-dpt").innerText = `Department of ${tDTargetExtIdMatchValExtCheckValidTRListCheckUIIdSetGenIdMapSetupValUI} | ${tYIdTSetTRkOutMatchIdIdRefTargetValListUIVSetupOListSetTMatchMapMatch? tYIdTSetTRkOutMatchIdIdRefTargetValListUIVSetupOListSetTMatchMapMatch+" Year": ""} 🎓`;
+
+                     let zMHtmlTbGOutValSetupMapUIMValIdTIdIdMatchObjOUIObjObjMTRSetCheckValTargetValSetupIdMTargetSetIdCheckSetGenCheckValTObjExtListTTargetUIIdRefCheckMListListTarget = `<div class="glass-table"><div class="subject-row header-row"><div class="c-code" style="width:18%;">Course Code</div><div class="c-name" style="width:52%;">Subject Title</div><div class="c-cred" style="width:12%;">Credit</div><div class="c-grade" style="width:18%;">Grade</div></div>`;
+                     gListTRMapRefValidIdTRkObjListRefGenOutOutOListVExtMatchIdCheckTTargetUIOut.forEach(gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI=>{
+                           let parsedFltValCre = parseFloat(gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI.crXOutMatchUIObjValSetupIdOOutVTRSetupOIdObjMatchTMapOObjSetO) || 0;
+                           let detectPFL = parsedFltValCre === 0;
+                           zMHtmlTbGOutValSetupMapUIMValIdTIdIdMatchObjOUIObjObjMTRSetCheckValTargetValSetupIdMTargetSetIdCheckSetGenCheckValTObjExtListTTargetUIIdRefCheckMListListTarget+= `<div class="subject-row"><div class="c-code" style="width:18%;">${gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI.idCMapIDObjUIMapExtMatchListValidSetupGenMatchIdVSetExtValidIdSetVObj}</div><div class="c-name" style="width:52%; font-size:11px;" title="${gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI.nmTrOObjValOutCheckMapTRUIListTListSetUIExtIdGenMapOutObj}">${gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI.nmTrOObjValOutCheckMapTRUIListTListSetUIExtIdGenMapOutObj}</div><div class="c-cred" style="width:12%;">${gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI.crXOutMatchUIObjValSetupIdOOutVTRSetupOIdObjMatchTMapOObjSetO}</div><div class="c-grade" style="width:18%;"><select class="grade-sel uVgrade" onchange="uiUcalcExtTrackLayoutResults()" dCrCheck="${parsedFltValCre}">${rOptions(gxUTgOCheckIdSetupOutMapTargetTMapTRMapUIListOutSetRefVTRListIdVOutSetOutMapSetUIOValidMObjValUI.gxExtValidMatchUIRefIdMatchUIGenMapVUIValidIdTValVListValidObjUIIdObjCheckMOutGenTRValidObjGenIdOObjO, detectPFL)}</select></div></div>`;
+                     }); 
+                     zMHtmlTbGOutValSetupMapUIMValIdTIdIdMatchObjOUIObjObjMTRSetCheckValTargetValSetupIdMTargetSetIdCheckSetGenCheckValTObjExtListTTargetUIIdRefCheckMListListTarget+="</div>";
+                     document.getElementById('u-tbld-div').innerHTML = zMHtmlTbGOutValSetupMapUIMValIdTIdIdMatchObjOUIObjObjMTRSetCheckValTargetValSetupIdMTargetSetIdCheckSetGenCheckValTObjExtListTTargetUIIdRefCheckMListListTarget;
+                     
+                     document.getElementById('warn-u').style.display='none'; 
+                     document.getElementById('top-u-tracker').style.display='block';
+                     
+                     tabCoreSelect('UNIVERSAL', document.getElementById('btnMainUniv'));
+                     let resFinalValGenUUIIDOutListIdMapIdTargetSetIdVMapCheckMapGenMapTRKCheckTValidMatchValValidListExtMatchGen = uiUcalcExtTrackLayoutResults(); 
+
+                     pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="Mapped Completely to Universal Scope 📑";
+                     eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="📁";
+                     
+                     if(resFinalValGenUUIIDOutListIdMapIdTargetSetIdVMapCheckMapGenMapTRKCheckTValidMatchValValidListExtMatchGen >= 3.00) congratsFlowers();
+                 }
+
+             } catch(errSetOListValidTCheckOutUIRkGenMSetCheckEvalMatchSetObjMapOValGenMatchMSetV) { 
+                 console.error(errSetOListValidTCheckOutUIRkGenMSetCheckEvalMatchSetObjMapOValGenMatchMSetV); 
+                 pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="⚠️ Data Mismatch / Error Formatting!"; 
+                 eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="🚨";
+             } finally{ 
+                 setTimeout(()=>{
+                     if(pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.id === 'ui-pdf-text-2') { pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="Drag & Drop or Click to Upload Others Dept PDF Here"; eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="📄"; } 
+                     else if (pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.id === 'bot-pdf-text') { pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="Upload Botany Result PDF Here 🌺"; eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="🌿"; }
+                     else { pUIWordTRkSetOOutValGenObjMatchSetupEvalTGenOutObjExtVOut.innerText="Click or Drag & Drop PDF Result Here"; eEmojiValIdOValidOObjIdUIRefIdTSetupListSetupIdValExtRefVTRListSetupTargetListRefObjIdValValValidListGen.innerText="📂"; }
+                     if(inpUIIdSeqValMSetupMapValMapListGenOutExtTRGenGen && inpUIIdSeqValMSetupMapValMapListGenOutExtTRGenGen.value) inpUIIdSeqValMSetupMapValMapListGenOutExtTRGenGen.value='';
+                 }, 3500); 
+             }
+        }
+
+        const lDTargetOutMapRefOObjValOutCheckMapMapListRefCheckTIdIdMapGenSetUIRRefCheckOExtOIdMatchTRValidSetupMapTRMatchVCheck = document.querySelectorAll('.pdf-uploader');
+        lDTargetOutMapRefOObjValOutCheckMapMapListRefCheckTIdIdMapGenSetUIRRefCheckOExtOIdMatchTRValidSetupMapTRMatchVCheck.forEach(trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(kEventsTrUIRefListRef => {
+                trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.addEventListener(kEventsTrUIRefListRef, (eCheckVListOOutGenSetupTGenTRTargetObjTargetSetupMMapOutExtGenSetupSetGenIdValidIdMapUIObjMatchTargetTRSetupMapOutRefIdMatchGenListMSetupValValCheckRefExtValidSetVTargetOutTargetExtUIO) => { eCheckVListOOutGenSetupTGenTRTargetObjTargetSetupMMapOutExtGenSetupSetGenIdValidIdMapUIObjMatchTargetTRSetupMapOutRefIdMatchGenListMSetupValValCheckRefExtValidSetVTargetOutTargetExtUIO.preventDefault(); eCheckVListOOutGenSetupTGenTRTargetObjTargetSetupMMapOutExtGenSetupSetGenIdValidIdMapUIObjMatchTargetTRSetupMapOutRefIdMatchGenListMSetupValValCheckRefExtValidSetVTargetOutTargetExtUIO.stopPropagation(); }, false);
+            });
+            ['dragenter', 'dragover'].forEach(kEventsTrUIRefListRef => {
+                trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.addEventListener(kEventsTrUIRefListRef, () => trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.classList.add('highlight'), false);
+            });
+            ['dragleave', 'drop'].forEach(kEventsTrUIRefListRef => {
+                trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.addEventListener(kEventsTrUIRefListRef, () => trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.classList.remove('highlight'), false);
+            });
+            trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.addEventListener('drop', (eVExtObjUIOutSetCheckIdGenCheckOutMRefSetTSetupGenMatchMapCheckValidMTargetUIValIdIdTSetSetMatchTObjSetTargetValObjIdCheckMapT) => {
+                const uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO = trCIdTargetGenSetVObjMValValTRMapObjRefUIGenCheckValidSetupSetTarget.querySelector('input[type="file"]');
+                if(uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO && eVExtObjUIOutSetCheckIdGenCheckOutMRefSetTSetupGenMatchMapCheckValidMTargetUIValIdIdTSetSetMatchTObjSetTargetValObjIdCheckMapT.dataTransfer.files && eVExtObjUIOutSetCheckIdGenCheckOutMRefSetTSetupGenMatchMapCheckValidMTargetUIValIdIdTSetSetMatchTObjSetTargetValObjIdCheckMapT.dataTransfer.files.length > 0) {
+                    uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO.files = eVExtObjUIOutSetCheckIdGenCheckOutMRefSetTSetupGenMatchMapCheckValidMTargetUIValIdIdTSetSetMatchTObjSetTargetValObjIdCheckMapT.dataTransfer.files;
+                    let kTxEvObjMatchExt, kExEmCheckMMapValidTR;
+                    if(uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO.id==='u-uploader'){ kTxEvObjMatchExt=document.getElementById('ui-pdf-text'); kExEmCheckMMapValidTR=document.getElementById('ui-pdf-emoji'); }
+                    else if(uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO.id==='u-uploader-2'){ kTxEvObjMatchExt=document.getElementById('ui-pdf-text-2'); kExEmCheckMMapValidTR=document.getElementById('ui-pdf-emoji-2'); }
+                    else if(uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO.id==='b-uploader'){ kTxEvObjMatchExt=document.getElementById('bot-pdf-text'); kExEmCheckMMapValidTR=document.getElementById('bot-pdf-emoji'); }
+                    parseUnifiedProcessorUIHandleMainMatchCheckExtIdTValidTMapCheck(uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO.files[0], kTxEvObjMatchExt, kExEmCheckMMapValidTR, uVIdInputRTargetExtMatchUIObjCheckTRSetMatchValSetO);
+                }
+            }, false);
+        });
+
+        document.getElementById('u-uploader').addEventListener('change', (evSetupListOutIdExtListUIMatchOExtMCheckVal) => parseUnifiedProcessorUIHandleMainMatchCheckExtIdTValidTMapCheck(evSetupListOutIdExtListUIMatchOExtMCheckVal.target.files[0], document.getElementById('ui-pdf-text'), document.getElementById('ui-pdf-emoji'), evSetupListOutIdExtListUIMatchOExtMCheckVal.target));
+        document.getElementById('u-uploader-2').addEventListener('change', (evSetupListOutIdExtListUIMatchOExtMCheckVal) => parseUnifiedProcessorUIHandleMainMatchCheckExtIdTValidTMapCheck(evSetupListOutIdExtListUIMatchOExtMCheckVal.target.files[0], document.getElementById('ui-pdf-text-2'), document.getElementById('ui-pdf-emoji-2'), evSetupListOutIdExtListUIMatchOExtMCheckVal.target));
+        document.getElementById('b-uploader').addEventListener('change', (evSetupListOutIdExtListUIMatchOExtMCheckVal) => parseUnifiedProcessorUIHandleMainMatchCheckExtIdTValidTMapCheck(evSetupListOutIdExtListUIMatchOExtMCheckVal.target.files[0], document.getElementById('bot-pdf-text'), document.getElementById('bot-pdf-emoji'), evSetupListOutIdExtListUIMatchOExtMCheckVal.target));
+
+        rDataBotsBuild(); 
+        for(let yrZIdxObjUIUIOOutValidMMapRefSetMatchTRSetCheckMapMatchValidTarget=1; yrZIdxObjUIUIOOutValidMMapRefSetMatchTRSetCheckMapMatchValidTarget<=4; yrZIdxObjUIUIOOutValidMMapRefSetMatchTRSetCheckMapMatchValidTarget++) { tGrCalcB(yrZIdxObjUIUIOOutValidMMapRefSetMatchTRSetCheckMapMatchValidTarget); }
+        tabCoreSelect('UPLOAD', document.getElementById('btnMainUpload'));
+    </script>
+</body>
+</html>
